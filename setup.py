@@ -36,13 +36,14 @@ setup(
     author='Corey Sterling',
     author_email='coreytsterling@gmail.com',
     install_requires=[
-        "wai.annotations==0.4.3",
-        "ufdl.pythonclient==0.0.1"
+        "wai.annotations==0.4.4",
+        "ufdl.pythonclient==0.0.1",
+        "ufdl-json-messages==0.0.1",
+        "ufdl-annotation-utils==0.0.1"
     ],
     entry_points={
         "wai.annotations.plugins": [
-            "from-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetInputFormatSpecifier",
-            "to-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetOutputFormatSpecifier"
+            "from-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetInputFormatSpecifier"
         ]
     }
 )
