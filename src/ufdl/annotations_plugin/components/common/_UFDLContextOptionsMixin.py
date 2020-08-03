@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import Union
+from typing import Union, Any
 
 from ufdl.pythonclient import UFDLServerContext
 
@@ -46,8 +46,17 @@ class UFDLContextOptionsMixin(CLIInstantiable):
         metavar="PASSWORD"
     )
 
-    def __init__(self, namespace: Union[Namespace, OptionsList, None] = None):
-        super().__init__(namespace)
+    def __init__(self,
+                 _namespace: Union[Namespace, OptionsList, None] = None,
+                 **internal: Any):
+        super().__init__(_namespace, **internal)
 
         # Create the client context for connecting to the server
         self._context: UFDLServerContext = UFDLServerContext(self.host, self.port, self.username, self.password)
+
+    @property
+    def ufdl_context(self) -> UFDLServerContext:
+        """
+        Gets the UFDL server context for this object.
+        """
+        return self._context
