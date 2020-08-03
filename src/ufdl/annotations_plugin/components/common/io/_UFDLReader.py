@@ -30,7 +30,7 @@ class UFDLReader(Reader[ExternalFormat], UFDLContextOptionsMixin):
 
         for pk in self.pks:
             # Get the list of files in the dataset
-            files = dataset.retrieve(self._context, pk)["files"]
+            files = dataset.retrieve(self.ufdl_context, pk)["files"]
 
             for file in files:
                 yield f"{pk}:{file}"
@@ -78,7 +78,7 @@ class UFDLReader(Reader[ExternalFormat], UFDLContextOptionsMixin):
         buffer = BytesIO()
 
         # Stream the contents from the server into the buffer
-        for chunk in dataset.get_file(self._context, pk, filename):
+        for chunk in dataset.get_file(self.ufdl_context, pk, filename):
             buffer.write(chunk)
 
         # Return the contents of the buffer

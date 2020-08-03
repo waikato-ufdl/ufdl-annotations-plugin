@@ -16,7 +16,7 @@ class UFDLObjDetReader(UFDLReader[UFDLObjDetExternalFormat]):
     """
     def read_annotations(self, pk: int, filename: str, file_data: bytes) -> Iterator[UFDLObjDetExternalFormat]:
         # Download the annotations
-        annotations = dataset.get_annotations_for_image(self._context, pk, filename)
+        annotations = dataset.get_annotations_for_image(self.ufdl_context, pk, filename)
 
         yield UFDLObjDetExternalFormat(
             ImageInfo.from_file_data(filename, file_data),
