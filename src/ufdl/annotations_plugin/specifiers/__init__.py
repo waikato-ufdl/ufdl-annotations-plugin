@@ -1,1 +1,2 @@
 from ._UFDLObjDetInputFormatSpecifier import UFDLObjDetInputFormatSpecifier
+from ._UFDLObjDetOutputFormatSpecifier import UFDLObjDetOutputFormatSpecifier
