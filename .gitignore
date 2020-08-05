@@ -130,3 +130,8 @@ dmypy.json
 
 # PyCharm files
 .idea/
+
+# vim
+*~
+*.swp
+
