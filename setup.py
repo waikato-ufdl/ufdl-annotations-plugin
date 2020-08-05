@@ -36,7 +36,7 @@ setup(
     author='Corey Sterling',
     author_email='coreytsterling@gmail.com',
     install_requires=[
-        "wai.annotations==0.4.5",
+        "wai.annotations==0.4.6",
         "ufdl.pythonclient==0.0.1",
         "ufdl-json-messages==0.0.1",
         "ufdl-annotation-utils==0.0.1"

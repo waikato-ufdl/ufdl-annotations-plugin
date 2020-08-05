@@ -1,6 +1,6 @@
 from typing import Iterator
 
-from ufdl.annotation_utils import annotation_from_located_object
+from ufdl.annotation_utils.object_detection import annotation_from_located_object
 
 from wai.annotations.core.component import OutputConverter
 from wai.annotations.domain.image.object_detection import ObjectDetectionInstance
