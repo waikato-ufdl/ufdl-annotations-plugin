@@ -1,1 +1,2 @@
 from ._UFDLClassifyReader import UFDLClassifyReader
+from ._UFDLClassifyWriter import UFDLClassifyWriter

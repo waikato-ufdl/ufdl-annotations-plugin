@@ -1,3 +1,4 @@
 from ._UFDLClassifyInputFormatSpecifier import UFDLClassifyInputFormatSpecifier
+from ._UFDLClassifyOutputFormatSpecifier import UFDLClassifyOutputFormatSpecifier
 from ._UFDLObjDetInputFormatSpecifier import UFDLObjDetInputFormatSpecifier
 from ._UFDLObjDetOutputFormatSpecifier import UFDLObjDetOutputFormatSpecifier
