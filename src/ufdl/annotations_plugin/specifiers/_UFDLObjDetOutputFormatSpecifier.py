@@ -6,7 +6,7 @@ from wai.annotations.core.specifier import OutputFormatSpecifier, DomainSpecifie
 
 class UFDLObjDetOutputFormatSpecifier(OutputFormatSpecifier):
     """
-    Specifies an output format that uses an UFDL server as its target.
+    Specifies an object-detection output format that uses an UFDL server as its target.
     """
     @classmethod
     def domain(cls) -> Type[DomainSpecifier]:

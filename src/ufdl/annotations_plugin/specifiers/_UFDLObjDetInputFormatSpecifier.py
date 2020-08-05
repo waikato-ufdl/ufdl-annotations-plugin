@@ -6,7 +6,7 @@ from wai.annotations.core.specifier import InputFormatSpecifier, DomainSpecifier
 
 class UFDLObjDetInputFormatSpecifier(InputFormatSpecifier):
     """
-    Specifies an input format that uses an UFDL server as its source.
+    Specifies an object-detection input format that uses an UFDL server as its source.
     """
     @classmethod
     def domain(cls) -> Type[DomainSpecifier]:
