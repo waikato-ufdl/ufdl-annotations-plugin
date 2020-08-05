@@ -1,50 +1,28 @@
 from abc import ABC, abstractmethod
 from argparse import Namespace
-from typing import Iterable, TypeVar, Optional, Union, Any, Callable, Tuple, List
+from typing import Iterable, TypeVar, Optional, Union, Any, Tuple, List
 
-from ufdl.json.core.filter import FilterSpec, OrderBy
+from ufdl.json.core.filter import FilterSpec
 from ufdl.json.core.filter.field import Exact
-from ufdl.pythonclient import UFDLServerContext
 
-from ufdl.pythonclient.functional.core import team, project, licence
+from ufdl.pythonclient.functional.core import licence
 
 from wai.annotations.core.component import Writer
 
 from wai.common.cli import OptionsList
 from wai.common.cli.options import TypedOption, FlagOption
 
-from wai.json.object import OptionallyPresent
-from wai.json.raw import RawJSONArray, RawJSONObject
-
-from .._UFDLContextOptionsMixin import UFDLContextOptionsMixin
-
-DATASET_LIST_METHOD_TYPE = Callable[[UFDLServerContext, Optional[FilterSpec]], RawJSONArray]
-DATASET_CREATE_METHOD_TYPE = Callable[[UFDLServerContext, str, int, int, str, bool, str], RawJSONObject]
-DATASET_COPY_METHOD_TYPE = Callable[[UFDLServerContext, int, OptionallyPresent[str]], RawJSONObject]
+from ..util import get_existing_dataset
+from .._typing import DATASET_LIST_METHOD_TYPE, DATASET_CREATE_METHOD_TYPE, DATASET_COPY_METHOD_TYPE
+from .._UFDLProjectSpecificMixin import UFDLProjectSpecificMixin
 
 ExternalFormat = TypeVar("ExternalFormat")
 
 
-class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
+class UFDLWriter(Writer[ExternalFormat], UFDLProjectSpecificMixin, ABC):
     """
     Writes instances to a data-set on a UFDL server.
     """
-    team: str = TypedOption(
-        "--team",
-        type=str,
-        required=True,
-        help="the name of the team that owns the dataset to write to",
-        metavar="TEAM"
-    )
-
-    project: str = TypedOption(
-        "--project",
-        type=str,
-        required=True,
-        help="the name of the project that owns the dataset to write to",
-        metavar="PROJECT"
-    )
-
     dataset: str = TypedOption(
         "--dataset",
         type=str,
@@ -105,16 +83,8 @@ class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
         # Get the dataset methods to use from the sub-class
         self._list_datasets, self._create_dataset, self._copy_dataset = self.get_dataset_methods()
 
-        # Prepare the appropriate project and dataset for writing
-        self._project_pk = self._get_project()
-        self._dataset_pk = self._prepare_dataset(self._project_pk)
-
-    @property
-    def project_pk(self) -> int:
-        """
-        Gets the primary key of the project being targeted.
-        """
-        return self._project_pk
+        # Prepare the appropriate dataset for writing
+        self._dataset_pk = self._prepare_dataset(self.project_pk)
 
     @property
     def target_dataset(self) -> Optional[int]:
@@ -153,7 +123,7 @@ class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
         # Version provided, updating current dataset
         else:
             # Get the primary key of the dataset to update
-            dataset_pk = self._get_existing_dataset(self.dataset, project_pk)
+            dataset_pk = get_existing_dataset(self._list_datasets, self.ufdl_context, project_pk, self.dataset, self.version)
 
             # If the dataset doesn't exist, error
             if dataset_pk is None:
@@ -174,7 +144,7 @@ class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
         :return:            The primary key of the new dataset.
         """
         # See if there is an existing dataset
-        if self._get_existing_dataset(name, project_pk) is not None:
+        if get_existing_dataset(self._list_datasets, self.ufdl_context, project_pk, name) is not None:
             raise Exception(f"A dataset named '{name}' already exists")
 
         return self._create_dataset(self.ufdl_context,
@@ -185,40 +155,6 @@ class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
                                     self.is_public,
                                     ",".join(self.tags)
                                     )['pk']
-
-    def _get_existing_dataset(self, name: str, project_pk: int) -> Optional[int]:
-        """
-        Gets the primary key of the specified dataset, if it exists,
-        or None if it doesn't.
-
-        :param name:        The name of the dataset to look for.
-        :param project_pk:  The primary key of the project to look in.
-        :return:            Dataset primary key or None.
-        """
-        # If no version is supplied, we want to create a new dataset with
-        # this name, so make sure there isn't one already.
-        if self.version is None:
-            datasets = self._list_datasets(self.ufdl_context, FilterSpec(
-                expressions=[
-                    Exact(field="name", value=name) &
-                    Exact(field="project", value=project_pk)
-                ],
-                order_by=[
-                    OrderBy(field="version", ascending=False)
-                ]
-            ))
-
-        # Version is supplied, make sure it exists
-        else:
-            datasets = self._list_datasets(self.ufdl_context, FilterSpec(
-                expressions=[
-                    Exact(field="name", value=self.dataset) &
-                    Exact(field="version", value=self.version) &
-                    Exact(field="project", value=project_pk)
-                ]
-            ))
-
-        return None if len(datasets) == 0 else datasets[0]['pk']
 
     def _get_licence(self) -> int:
         """
@@ -242,57 +178,6 @@ class UFDLWriter(Writer[ExternalFormat], UFDLContextOptionsMixin, ABC):
             raise Exception(f"No licence named '{self.licence}'")
 
         return licences[0]['pk']
-
-    def _get_project(self) -> int:
-        """
-        Gets the primary key of the specified project in the specified team.
-
-        :return:    The project's primary key.
-        """
-        # Get the list of teams with the given name (should be at most one)
-        teams = team.list(self.ufdl_context, self._get_team_filter())
-
-        # If none, then the team doesn't exist
-        if len(teams) == 0:
-            raise Exception(f"No team named '{self.team}'")
-
-        # Get the primary key of the team
-        team_pk = teams[0]['pk']
-
-        # Get the list of projects owned by that team, with the given name (should be at most one)
-        projects = project.list(self.ufdl_context, self._get_project_filter(team_pk))
-
-        # If none, then the project doesn't exist
-        if len(projects) == 0:
-            raise Exception(f"No project named '{self.project}'")
-
-        # Get the primary key of the project
-        return projects[0]['pk']
-
-    def _get_team_filter(self) -> FilterSpec:
-        """
-        Gets the filter specification for retrieving the team specified by name.
-
-        :return:    The filter specification.
-        """
-        return FilterSpec(
-            expressions=[
-                Exact(field="name", value=self.team)
-            ]
-        )
-
-    def _get_project_filter(self, team_pk: int) -> FilterSpec:
-        """
-        Gets the filter specification for retrieving the project specified by name
-        and team pk.
-
-        :return:    The filter specification.
-        """
-        return FilterSpec(
-            expressions=[
-                Exact(field="name", value=self.project) & Exact(field="team", value=team_pk)
-            ]
-        )
 
     def split_write(self, instances: Iterable[ExternalFormat], split_name: str):
         if self.new_dataset_per_split:

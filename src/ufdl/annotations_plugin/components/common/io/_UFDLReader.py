@@ -8,27 +8,37 @@ from wai.annotations.core.component import Reader
 
 from wai.common.cli.options import TypedOption
 
-from .._UFDLContextOptionsMixin import UFDLContextOptionsMixin
+from ..util import get_existing_dataset
+from .._UFDLProjectSpecificMixin import UFDLProjectSpecificMixin
 
 ExternalFormat = TypeVar("ExternalFormat")
 
 
-class UFDLReader(Reader[ExternalFormat], UFDLContextOptionsMixin):
+class UFDLReader(Reader[ExternalFormat], UFDLProjectSpecificMixin):
     """
     Base class for readers which read datasets from a UFDL server.
     """
-    pks: List[int] = TypedOption(
-        "--pks",
-        type=int,
+    datasets: List[str] = TypedOption(
+        "--datasets",
+        type=str,
         nargs="+",
         required=True,
-        help="the list of primary keys of the datasets to convert",
-        metavar="PK"
+        help="the list of datasets to convert (omit version for latest)",
+        metavar="NAME[==VERSION]"
     )
 
     def get_annotation_files(self) -> Iterator[str]:
+        for ds in self.datasets:
+            # Parse the name/version from the string
+            if "==" in ds:
+                name, version = ds.split("==", 1)
+                version = int(version)
+            else:
+                name, version = ds, None
 
-        for pk in self.pks:
+            # Get the dataset's pk
+            pk = get_existing_dataset(dataset.list, self.ufdl_context, self.project_pk, name, version)
+
             # Get the list of files in the dataset
             files = dataset.retrieve(self.ufdl_context, pk)["files"]
 
