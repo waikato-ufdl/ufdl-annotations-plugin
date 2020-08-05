@@ -43,6 +43,7 @@ setup(
     ],
     entry_points={
         "wai.annotations.plugins": [
+            "from-ufdl-classify=ufdl.annotations_plugin.specifiers:UFDLClassifyInputFormatSpecifier",
             "from-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetInputFormatSpecifier",
             "to-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetOutputFormatSpecifier"
         ]
