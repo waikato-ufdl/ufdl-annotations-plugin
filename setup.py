@@ -42,10 +42,10 @@ setup(
     ],
     entry_points={
         "wai.annotations.plugins": [
-            "from-ufdl-classify=ufdl.annotations_plugin.specifiers:UFDLClassifyInputFormatSpecifier",
-            "to-ufdl-classify=ufdl.annotations_plugin.specifiers:UFDLClassifyOutputFormatSpecifier",
-            "from-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetInputFormatSpecifier",
-            "to-ufdl-objdet=ufdl.annotations_plugin.specifiers:UFDLObjDetOutputFormatSpecifier"
+            "from-ufdl-ic=ufdl.annotations_plugin.image.classification.specifier:UFDLImageClassificationSourceStageSpecifier",
+            "to-ufdl-ic=ufdl.annotations_plugin.image.classification.specifier:UFDLImageClassificationSinkStageSpecifier",
+            "from-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSourceStageSpecifier",
+            "to-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSinkStageSpecifier"
         ]
     }
 )

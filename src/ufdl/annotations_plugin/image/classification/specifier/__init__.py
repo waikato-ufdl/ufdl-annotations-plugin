@@ -1,0 +1,5 @@
+"""
+Specifiers of the image classification components.
+"""
+from ._UFDLImageClassificationSinkStageSpecifier import UFDLImageClassificationSinkStageSpecifier
+from ._UFDLImageClassificationSourceStageSpecifier import UFDLImageClassificationSourceStageSpecifier
