@@ -45,7 +45,9 @@ setup(
             "from-ufdl-ic=ufdl.annotations_plugin.image.classification.specifier:UFDLImageClassificationSourceStageSpecifier",
             "to-ufdl-ic=ufdl.annotations_plugin.image.classification.specifier:UFDLImageClassificationSinkStageSpecifier",
             "from-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSourceStageSpecifier",
-            "to-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSinkStageSpecifier"
+            "to-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSinkStageSpecifier",
+            "from-ufdl-sp=ufdl.annotations_plugin.audio.speech.specifier:UFDLSpeechSourceStageSpecifier",
+            "to-ufdl-sp=ufdl.annotations_plugin.audio.speech.specifier:UFDLSpeechSinkStageSpecifier"
         ]
     }
 )
