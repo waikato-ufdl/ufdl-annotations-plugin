@@ -25,7 +25,7 @@ class UFDLReader(UFDLProjectSpecificMixin, SourceComponent[ExternalFormat]):
         nargs="+",
         required=True,
         help="the list of datasets to convert (omit version for latest)",
-        metavar="NAME[==VERSION]"
+        metavar="name:NAME[==VERSION] | pk:PK"
     )
 
     def produce(
@@ -35,14 +35,23 @@ class UFDLReader(UFDLProjectSpecificMixin, SourceComponent[ExternalFormat]):
     ):
         for ds in self.datasets:
             # Parse the name/version from the string
-            if "==" in ds:
-                name, version = ds.split("==", 1)
-                version = int(version)
-            else:
-                name, version = ds, None
+            pk: int
+            if ds.startswith("name:"):
+                ds = ds[5:]
+                if "==" in ds:
+                    name, version = ds.split("==", 1)
+                    version = int(version)
+                else:
+                    name, version = ds, None
+                # Get the dataset's pk
+                pk = get_existing_dataset(dataset.list, self.ufdl_context, self.project_pk, name, version)
 
-            # Get the dataset's pk
-            pk = get_existing_dataset(dataset.list, self.ufdl_context, self.project_pk, name, version)
+                if pk is None:
+                    raise Exception(f"Couldn't find dataset {ds} in team '{self.team}', project '{self.project}'")
+            elif ds.startswith("pk:"):
+                pk = int(ds[3:])
+            else:
+                raise Exception(f"--datasets option values should be prefixed with either 'name:' or 'pk:', got {ds}")
 
             # Get the list of files in the dataset
             files = dataset.retrieve(self.ufdl_context, pk)["files"]
