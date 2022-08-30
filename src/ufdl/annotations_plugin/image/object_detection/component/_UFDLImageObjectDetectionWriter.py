@@ -1,11 +1,16 @@
 from typing import Optional, Dict, Set
 
-from ufdl.annotation_utils.object_detection import annotation_from_located_object
+from ufdl.json.object_detection import Annotation, Polygon
 
 from ufdl.pythonclient.functional.object_detection import dataset
 
 from wai.annotations.core.stream.util import ProcessState
 from wai.annotations.domain.image.object_detection import ImageObjectDetectionInstance
+from wai.annotations.domain.image.object_detection.util import get_object_prefix, get_object_label
+
+from wai.common.adams.imaging.locateobjects import LocatedObject
+
+from wai.json.object import Absent
 
 from ....common.component import UFDLWriter
 from ....common.component.util import DatasetMethods
@@ -51,5 +56,26 @@ class UFDLImageObjectDetectionWriter(UFDLWriter[ImageObjectDetectionInstance]):
                 self.ufdl_context,
                 dataset_pk,
                 filename,
-                list(map(annotation_from_located_object, element.annotations))
+                list(map(self.annotation_from_located_object, element.annotations))
             )
+
+    @staticmethod
+    def annotation_from_located_object(located_object: LocatedObject) -> Annotation:
+        """
+        Creates an annotation from a located object.
+
+        :param located_object:  The located object.
+        :return:                The annotation.
+        """
+        return Annotation(
+            x=located_object.x,
+            y=located_object.y,
+            width=located_object.width,
+            height=located_object.height,
+            polygon=(
+                Polygon.from_geometric_polygon(located_object.get_actual_polygon())
+                if located_object.has_polygon() else Absent
+            ),
+            label=get_object_label(located_object),
+            prefix=get_object_prefix(located_object, Absent)
+        )
