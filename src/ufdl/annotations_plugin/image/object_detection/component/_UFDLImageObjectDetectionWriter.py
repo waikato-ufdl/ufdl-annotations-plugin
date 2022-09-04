@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Set
 
-from ufdl.json.object_detection import Annotation, Polygon
+from ufdl.json.object_detection import ImageAnnotation, Polygon
 
 from ufdl.pythonclient.functional.object_detection import dataset
 
@@ -52,7 +52,7 @@ class UFDLImageObjectDetectionWriter(UFDLWriter[ImageObjectDetectionInstance]):
 
         # Upload the annotations
         if element.annotations is not None:
-            dataset.set_annotations_for_image(
+            dataset.set_annotations_for_file(
                 self.ufdl_context,
                 dataset_pk,
                 filename,
@@ -60,14 +60,14 @@ class UFDLImageObjectDetectionWriter(UFDLWriter[ImageObjectDetectionInstance]):
             )
 
     @staticmethod
-    def annotation_from_located_object(located_object: LocatedObject) -> Annotation:
+    def annotation_from_located_object(located_object: LocatedObject) -> ImageAnnotation:
         """
         Creates an annotation from a located object.
 
         :param located_object:  The located object.
         :return:                The annotation.
         """
-        return Annotation(
+        return ImageAnnotation(
             x=located_object.x,
             y=located_object.y,
             width=located_object.width,
