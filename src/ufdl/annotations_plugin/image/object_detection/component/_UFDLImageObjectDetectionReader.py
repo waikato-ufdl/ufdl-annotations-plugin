@@ -154,7 +154,7 @@ class UFDLImageObjectDetectionReader(UFDLReader[ImageObjectDetectionInstance]):
                             image_annotations.append(video_annotations.pop(0).to_image_annotation())
 
                         # Create an augmented filename for this frame of the video
-                        augmented_filename = f"{os.path.splitext(filename)[0]}.{frame_time}.jpg"
+                        augmented_filename = f"{filename}@|frametime={frame_time}|.jpg"
 
                         # Create a temporary filename to store the frame image under
                         tmp_image_filename = os.path.join(tmp_dir, "image.jpg")
