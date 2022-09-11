@@ -21,6 +21,7 @@ from wai.annotations.domain.image.object_detection.util import set_object_label,
 from wai.common.adams.imaging.locateobjects import LocatedObjects, LocatedObject
 
 from wai.json.object import Absent
+from wai.json.raw import RawJSONArray, RawJSONObject
 
 from ....common.component import UFDLReader
 
@@ -83,95 +84,120 @@ class UFDLImageObjectDetectionReader(UFDLReader[ImageObjectDetectionInstance]):
         if file_type is None:
             return
 
+        # Get the annotations
         annotations = dataset.get_annotations_for_file(self.ufdl_context, pk, filename)
 
         if file_type.get('length', None) is None:
-            json_image: JSONImage = JSONImage.from_raw_json(
-                {
-                    **file_type,
-                    'annotations': annotations
-                }
-            )
-            format = (
-                ImageFormat.for_extension(json_image.format) if json_image.format is not Absent
-                else None
-            )
-            dimensions = (
-                json_image.dimensions if json_image.dimensions is not Absent
-                else None
-            )
-
-            yield (
-                Image(
-                    filename,
-                    file_data,
-                    format,
-                    dimensions
-                ),
-                json_image.annotations
-            )
+            yield self.get_image_instance(filename, file_data, file_type, annotations)
         else:
-            json_video: JSONVideo = JSONVideo.from_raw_json(
-                {
-                    **file_type,
-                    'annotations': annotations
-                }
-            )
-            format = ImageFormat.for_extension("jpg")
-            dimensions = (
-                json_video.dimensions if json_video.dimensions is not Absent
-                else None
-            )
+            yield from self.get_video_frame_instances(filename, file_data, file_type, annotations)
 
-            # Get the annotations and sort them by frame-time
-            video_annotations: List[VideoAnnotation] = list(json_video.annotations)
-            video_annotations.sort(key=lambda video_annotation: video_annotation.time)
+    @staticmethod
+    def get_image_instance(
+            filename: str,
+            file_data: bytes,
+            file_type: RawJSONObject,
+            annotations: RawJSONArray
+    ) -> Tuple[Image, List[ImageAnnotation]]:
+        # Parse the raw JSON
+        json_image: JSONImage = JSONImage.from_raw_json(
+            {
+                **file_type,
+                'annotations': annotations
+            }
+        )
 
-            # If there are no annotated frames, skip this video
-            if len(video_annotations) == 0:
-                return
+        # Extract the format and dimensions
+        format = (
+            ImageFormat.for_extension(json_image.format) if json_image.format is not Absent
+            else None
+        )
+        dimensions = (
+            json_image.dimensions if json_image.dimensions is not Absent
+            else None
+        )
 
-            # We need to write the video data to disk so that FFMPEG can read it,
-            # so do so in a temporary file
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                # Create a name for the temporary copy of the video data
-                video_filename = os.path.join(tmp_dir, "video")
+        return (
+            Image(
+                filename,
+                file_data,
+                format,
+                dimensions
+            ),
+            json_image.annotations
+        )
 
-                # Copy the video data to a temporary file
-                with open(video_filename, "wb") as tmp_video_file:
-                    tmp_video_file.write(file_data)
+    @staticmethod
+    def get_video_frame_instances(
+            filename: str,
+            file_data: bytes,
+            file_type: RawJSONObject,
+            annotations: RawJSONArray
+    ) -> Iterator[Tuple[Image, List[ImageAnnotation]]]:
+        # Parse the raw JSON
+        json_video: JSONVideo = JSONVideo.from_raw_json(
+            {
+                **file_type,
+                'annotations': annotations
+            }
+        )
 
-                # Open the video with FFMPEG
-                with VideoFileClip(video_filename, audio=False) as video_clip:
-                    # Create images
-                    while len(video_annotations) > 0:
-                        # Get the frame-time we are creating an image for
-                        frame_time = video_annotations[0].time
+        # Extract the format and dimensions
+        format = ImageFormat.for_extension("jpg")  # We always extract frames as JPGs
+        dimensions = (
+            json_video.dimensions if json_video.dimensions is not Absent
+            else None
+        )
 
-                        # Convert the video annotations for this frame to image annotations
-                        image_annotations: List[ImageAnnotation] = []
-                        while len(video_annotations) > 0 and video_annotations[0].time == frame_time:
-                            image_annotations.append(video_annotations.pop(0).to_image_annotation())
+        # Get the annotations and sort them by frame-time
+        video_annotations: List[VideoAnnotation] = list(json_video.annotations)
+        video_annotations.sort(key=lambda video_annotation: video_annotation.time)
 
-                        # Create an augmented filename for this frame of the video
-                        augmented_filename = f"{filename}@|frametime={frame_time}|.jpg"
+        # If there are no annotated frames, skip this video
+        if len(video_annotations) == 0:
+            return
 
-                        # Create a temporary filename to store the frame image under
-                        tmp_image_filename = os.path.join(tmp_dir, "image.jpg")
+        # We need to write the video data to disk so that FFMPEG can read it,
+        # so do so in a temporary file
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Create a name for the temporary copy of the video data
+            video_filename = os.path.join(tmp_dir, "video")
 
-                        # Save the frame as a temporary JPEG
-                        video_clip.save_frame(tmp_image_filename, frame_time, False)
+            # Copy the video data to a temporary file
+            with open(video_filename, "wb") as tmp_video_file:
+                tmp_video_file.write(file_data)
 
-                        # Read the image data back in to memory
-                        with open(tmp_image_filename, "rb") as tmp_image_file:
-                            frame_data = tmp_image_file.read()
+            # Open the video with FFMPEG
+            with VideoFileClip(video_filename, audio=False) as video_clip:
+                # Create images
+                while len(video_annotations) > 0:
+                    # Get the frame-time we are creating an image for
+                    frame_time = video_annotations[0].time
 
-                        # Create an image descriptor for the frame
-                        image = Image(
-                            augmented_filename,
-                            frame_data,
-                            format,
-                            dimensions
-                        )
+                    # Convert the video annotations for this frame to image annotations
+                    image_annotations: List[ImageAnnotation] = []
+                    while len(video_annotations) > 0 and video_annotations[0].time == frame_time:
+                        image_annotations.append(video_annotations.pop(0).to_image_annotation())
 
-                        yield image, image_annotations
+                    # Create an augmented filename for this frame of the video
+                    augmented_filename = f"{filename}@|frametime={frame_time}|.jpg"
+
+                    # Create a temporary filename to store the frame image under
+                    tmp_image_filename = os.path.join(tmp_dir, "image.jpg")
+
+                    # Save the frame as a temporary JPEG
+                    video_clip.save_frame(tmp_image_filename, frame_time, False)
+
+                    # Read the image data back in to memory
+                    with open(tmp_image_filename, "rb") as tmp_image_file:
+                        frame_data = tmp_image_file.read()
+
+                    # Create an image descriptor for the frame
+                    image = Image(
+                        augmented_filename,
+                        frame_data,
+                        format,
+                        dimensions
+                    )
+
+                    yield image, image_annotations
