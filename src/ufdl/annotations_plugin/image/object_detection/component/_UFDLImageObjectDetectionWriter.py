@@ -50,6 +50,17 @@ class UFDLImageObjectDetectionWriter(UFDLWriter[ImageObjectDetectionInstance]):
         # Add the filename to the cache
         existing_files_cache[dataset_pk].add(filename)
 
+        # Set the file-type for the file
+        dataset.set_file_type(
+            self.ufdl_context,
+            dataset_pk,
+            filename,
+            str(element.data.format),
+            element.data.width,
+            element.data.height,
+            None  # TODO: Only handles images for the time being
+        )
+
         # Upload the annotations
         if element.annotations is not None:
             dataset.set_annotations_for_file(
