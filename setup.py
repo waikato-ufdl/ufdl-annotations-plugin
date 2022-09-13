@@ -38,7 +38,7 @@ setup(
     install_requires=[
         "ufdl.pythonclient==0.0.1",
         "ufdl.json-messages==0.0.1",
-        "wai.annotations.core==0.1.8",
+        "wai.annotations.core==0.2.0",
         "moviepy==1.0.3"
     ],
     entry_points={
