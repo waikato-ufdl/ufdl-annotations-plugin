@@ -38,7 +38,7 @@ setup(
     install_requires=[
         "ufdl.pythonclient==0.0.1",
         "ufdl.json-messages==0.0.1",
-        "wai.annotations.core>=0.2.0,<0.3",
+        "wai.annotations.core>=0.2.2,<0.3",
         "moviepy==1.0.3"
     ],
     entry_points={
@@ -48,7 +48,9 @@ setup(
             "from-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSourceStageSpecifier",
             "to-ufdl-od=ufdl.annotations_plugin.image.object_detection.specifier:UFDLImageObjectDetectionSinkStageSpecifier",
             "from-ufdl-sp=ufdl.annotations_plugin.audio.speech.specifier:UFDLSpeechSourceStageSpecifier",
-            "to-ufdl-sp=ufdl.annotations_plugin.audio.speech.specifier:UFDLSpeechSinkStageSpecifier"
+            "to-ufdl-sp=ufdl.annotations_plugin.audio.speech.specifier:UFDLSpeechSinkStageSpecifier",
+            "from-ufdl-sc=ufdl.annotations_plugin.spectra.classification.specifier:UFDLSpectrumClassificationSourceStageSpecifier",
+            "to-ufdl-sc=ufdl.annotations_plugin.spectra.classification.specifier:UFDLSpectrumClassificationSinkStageSpecifier",
         ]
     }
 )
